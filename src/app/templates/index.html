@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détection d'objets</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="#">Accueil</a></li>
+            <li><a href="#">À propos</a></li>
+        </ul>
+    </nav>
+    <main>
+        <section>
+            <h2>Analyse d'images</h2>
+            <button onclick="startAnalysis()">Lancer l'analyse</button>
+        </section>
+        <section id="video-container">
+            <!-- Les vidéos seront affichées ici -->
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Nathan BRAUD, Léa RISSEL, Marin BOEHM, boubacar DIALLO, moulayelbechir MOULAYEELBOUKHARY, Salah Eddine HAKKAL. Distribué sous la <a href="https://opensource.org/licenses/MIT">licence MIT</a>.</p>
+    </footer>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+</body>
+</html>

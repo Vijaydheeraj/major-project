@@ -1,0 +1,52 @@
+# Ignorer les fichiers de configuration spécifique à l'IDE
+.idea/
+.vscode/
+
+# Ignorer les fichiers de configuration spécifique à l'environnement
+.env
+*.env
+
+# Ignorer les fichiers de cache et de logs
+__pycache__/
+*.pyc
+*.pyo
+*.log
+
+# Ignorer les fichiers de dépendances
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Ignorer les fichiers de configuration spécifiques au système d'exploitation
+.DS_Store
+Thumbs.db
+
+# Ignorer les fichiers de configuration spécifiques à l'application
+config.yaml
+config.json
+
+# Ignorer les fichiers de test et de couverture de code
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Ignorer les fichiers générés par les outils de documentation
+docs/_build/
+
+# Ignorer les fichiers de déploiement
+*.deploy
+
+# Ignorer les fichiers de base de données
+*.sqlite3
+*.db
+
+# Ignorer les fichiers de Jupyter Notebook
+.ipynb_checkpoints/
+
+# Ignorer les fichiers de modèles pré-entraînés
+*.pt
