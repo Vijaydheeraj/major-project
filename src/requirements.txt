@@ -2,3 +2,6 @@ Flask
 opencv-python
 pandas
 ultralytics
+torch
+torchvision
+Pillow
