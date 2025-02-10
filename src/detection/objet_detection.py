@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+
 # Ajouter le répertoire racine au PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -14,22 +15,54 @@ from src.detection.light import model as light_model
 from PIL import Image
 import torch
 
+# Lire le fichier de configuration
+config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'config.json')
+with open(config_path, 'r') as config_file:
+    config = json.load(config_file)
+
+# Extraire le chemin du modèle
+model_path = config['model']['path']
+
 # Initialize the low-light enhancement model
-DCE_net = light_model.enhance_net_nopool().cuda()
-DCE_net.load_state_dict(torch.load('C:/Users/Siddikh/Documents/Projet_collectif/object_detection/src/detection/light/snapshots/Epoch99.pth'))
+DCE_net = light_model.enhance_net_nopool()
+DCE_net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+
 #utiliser la variable a la place au lieu du chemin entier
-def enhance_image(image):
-    data_lowlight = (np.asarray(image) / 255.0)
+def enhance_image(frame):
+    if not isinstance(frame, np.ndarray):
+        raise TypeError("Le frame fourni n'est pas un tableau NumPy. Vérifiez la source de l'image.")
+    # Convertir le frame en image PIL
+    frame_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+    # Améliorer l'image
+    data_lowlight = (np.asarray(frame_image) / 255.0)
     data_lowlight = torch.from_numpy(data_lowlight).float()
     data_lowlight = data_lowlight.permute(2, 0, 1)
-    data_lowlight = data_lowlight.cuda().unsqueeze(0)
+    data_lowlight = data_lowlight.unsqueeze(0)  # Add batch dimension
 
     with torch.no_grad():
         _, enhanced_image, _ = DCE_net(data_lowlight)
     
-    enhanced_image = enhanced_image.squeeze().permute(1, 2, 0).cpu().numpy()
+    enhanced_image = enhanced_image.squeeze().permute(1, 2, 0).numpy()
     enhanced_image = (enhanced_image * 255).astype(np.uint8)
-    return Image.fromarray(enhanced_image)
+    enhanced_frame = Image.fromarray(enhanced_image)
+
+    # Convertir l'image améliorée en frame OpenCV
+    enhanced_frame = cv2.cvtColor(np.array(enhanced_frame), cv2.COLOR_RGB2BGR)
+
+    # Traiter l'image et obtenir les résultats
+    #detections = process_frame(enhanced_frame) # supprimer cette ligne si tu veux pas calculer sur l'image amélioree
+
+    # Afficher les résultats dans la vidéo #ce paragraphe aussi
+    '''for index, row in detections.iterrows():
+        x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
+        label = row['name']
+        confidence = row['confidence']
+        color = (0, 255, 0)  # Vert pour les objets détectés
+        cv2.rectangle(enhanced_frame, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(enhanced_frame, f"{label} ({confidence:.2f})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)'''
+
+    return enhanced_frame
 
 def process_videos(folder_path: str) -> None:
     # Parcourir tous les fichiers dans le dossier
@@ -45,7 +78,7 @@ def process_video(video_path: str) -> None:
     if not cap.isOpened():
         raise IOError(f"Erreur: Impossible d'ouvrir la vidéo {video_path}.")
 
-     # Obtenir les propriétés de la vidéo
+    # Obtenir les propriétés de la vidéo
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
@@ -68,26 +101,8 @@ def process_video(video_path: str) -> None:
             print(f"Fin de la vidéo {video_path} ou erreur de lecture.")
             break
 
-        # Convertir le frame en image PIL
-        frame_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-
         # Améliorer l'image
-        enhanced_frame = enhance_image(frame_image)
-
-        # Convertir l'image améliorée en frame OpenCV
-        enhanced_frame = cv2.cvtColor(np.array(enhanced_frame), cv2.COLOR_RGB2BGR)
-
-        # Traiter l'image et obtenir les résultats
-        detections = process_frame(enhanced_frame)
-
-        # Afficher les résultats dans la vidéo
-        for index, row in detections.iterrows():
-            x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-            label = row['name']
-            confidence = row['confidence']
-            color = (0, 255, 0)  # Vert pour les objets détectés
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(frame, f"{label} ({confidence:.2f})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        enhanced_frame = enhance_image(frame)
 
         # Sauvegarder le frame amélioré dans le fichier vidéo
         out.write(enhanced_frame)
@@ -124,4 +139,3 @@ def process_frame(frame: Any) -> pd.DataFrame:
 
     return detections_df
 
-process_videos('C:/Users/Siddikh/Videos/ProjetCollectif/prise_2')
