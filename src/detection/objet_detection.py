@@ -1,11 +1,10 @@
 import os
-import sys
-import json
 
 # Ajouter le répertoire racine au PYTHONPATH
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# TODO : Retirer les 2 lignes si fonctionne sur les autres machines
+#import sys
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-import os
 import cv2
 import pandas as pd
 import numpy as np
@@ -15,20 +14,13 @@ from src.detection.light import model as light_model
 from PIL import Image
 import torch
 
-# Lire le fichier de configuration
-config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'config.json')
-with open(config_path, 'r') as config_file:
-    config = json.load(config_file)
-
-# Extraire le chemin du modèle
-model_path = config['model']['path']
-
 # Initialize the low-light enhancement model
+model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'light', 'snapshots', 'epoch99.pth')
 DCE_net = light_model.enhance_net_nopool()
 DCE_net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
 
-#utiliser la variable a la place au lieu du chemin entier
 def enhance_image(frame):
+    # TODO : Déplacer la fonction dans un autre fichier
     if not isinstance(frame, np.ndarray):
         raise TypeError("Le frame fourni n'est pas un tableau NumPy. Vérifiez la source de l'image.")
     # Convertir le frame en image PIL
@@ -84,12 +76,15 @@ def process_video(video_path: str) -> None:
     fps = int(cap.get(cv2.CAP_PROP_FPS))
 
     # Créer un writer pour sauvegarder la vidéo améliorée
+    # TODO : Mettre dans une fonction utilitaire dans utils.py et ne plus l'appeler ici
     output_path = video_path.replace('.mp4', '_enhanced.mp4')
     out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
 
     # Créer des fenêtres pour afficher les vidéos
-    window_name_original = "Video Originale"
-    window_name_enhanced = "Video Améliorée"
+    # TODO : N'afficher que la video amelioree ou la video originale (choix a faire)
+    #  avec le traitement de l'image fait dessus en appelant process_frame (après l'appel a la fonction enhance_image)
+    window_name_original = "video originale"
+    window_name_enhanced = "video amelioree"
     cv2.namedWindow(window_name_original, cv2.WINDOW_NORMAL)
     cv2.namedWindow(window_name_enhanced, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(window_name_original, 640, 360)
