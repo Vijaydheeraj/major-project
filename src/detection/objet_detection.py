@@ -1,19 +1,15 @@
 import os
+import cv2
+import pandas as pd
+from typing import Any
+from src.detection.model import model
+from src.detection.light.lowlight_test import enhance_image
 
 # Ajouter le répertoire racine au PYTHONPATH
 # TODO : Retirer les 2 lignes si fonctionne sur les autres machines
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-import cv2
-import pandas as pd
-import numpy as np
-from typing import Any
-from src.detection.model import model
-from src.detection.light import model as light_model
-from PIL import Image
-import torch
-from src.detection.light.lowlight_test import enhance_image
 
 def process_videos(folder_path: str) -> None:
     # Parcourir tous les fichiers dans le dossier
@@ -22,6 +18,7 @@ def process_videos(folder_path: str) -> None:
             continue
         video_path = os.path.join(folder_path, filename)
         process_video(video_path)
+
 
 def process_video(video_path: str) -> None:
     # Ouvrir la vidéo
@@ -76,6 +73,7 @@ def process_video(video_path: str) -> None:
         out.release()
         cv2.destroyAllWindows()
 
+
 def process_frame(frame: Any) -> pd.DataFrame:
     # # Ameliore l'image pour une meilleure detection
     # frame = enhance_image(frame)
@@ -88,7 +86,7 @@ def process_frame(frame: Any) -> pd.DataFrame:
 
     # Convertir les résultats en DataFrame
     detections_df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
-    
+
     # Ajouter les noms des classes
     detections_df['name'] = detections_df['class'].apply(lambda x: model.names[int(x)])
 
@@ -97,5 +95,3 @@ def process_frame(frame: Any) -> pd.DataFrame:
     detections_df = detections_df[~detections_df['name'].isin(["couch", "chair", "car", "bench", "train"])]
 
     return detections_df
-
-process_video("C:/Users/Siddikh/Videos/ProjetCollectif/prise_14")

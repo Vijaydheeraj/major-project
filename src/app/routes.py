@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, Response
 from src.detection.objet_detection import process_videos
 from src.config.config_loader import load_config, get_video_path
 
+
 def init_routes(app: Flask) -> None:
     @app.route('/')
     def index() -> str:
