@@ -15,10 +15,6 @@ import time
 import cv2
 from src.detection.light import model as light_model
 
-#si cuda
-# Vérifier la disponibilité de CUDA
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 # Initialize the low-light enhancement model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'snapshots', 'epoch99.pth')
@@ -28,9 +24,9 @@ DCE_net.eval()
 
 
 def enhance_image(frame):
-    # TODO : Déplacer la fonction dans un autre fichier
     if not isinstance(frame, np.ndarray):
         raise TypeError("Le frame fourni n'est pas un tableau NumPy. Vérifiez la source de l'image.")
+
     # Convertir le frame en image PIL
     frame_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
@@ -49,18 +45,6 @@ def enhance_image(frame):
 
     # Convertir l'image améliorée en frame OpenCV
     enhanced_frame = cv2.cvtColor(np.array(enhanced_frame), cv2.COLOR_RGB2BGR)
-
-    # Traiter l'image et obtenir les résultats
-    #detections = process_frame(enhanced_frame) # supprimer cette ligne si tu veux pas calculer sur l'image amélioree
-
-    # Afficher les résultats dans la vidéo #ce paragraphe aussi
-    '''for index, row in detections.iterrows():
-        x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-        label = row['name']
-        confidence = row['confidence']
-        color = (0, 255, 0)  # Vert pour les objets détectés
-        cv2.rectangle(enhanced_frame, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(enhanced_frame, f"{label} ({confidence:.2f})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)'''
 
     return enhanced_frame
 
@@ -82,6 +66,7 @@ def lowlight(image_path):
 
     end_time = (time.time() - start)
     print(end_time)
+
     #Met a jour le chemin du resultat
     image_path = image_path.replace('test_data', 'result')
     result_path = image_path

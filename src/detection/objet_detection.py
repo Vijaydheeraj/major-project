@@ -1,14 +1,20 @@
 import os
+import sys
 import cv2
 import pandas as pd
+from inference import get_model
 from typing import Any
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from src.detection.model import model
 from src.detection.light.lowlight_test import enhance_image
+from src.config.config_loader import load_config, get_ai_model
 
-# Ajouter le répertoire racine au PYTHONPATH
-# TODO : Retirer les 2 lignes si fonctionne sur les autres machines
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+config = load_config()
+roboflow_api_key, model_id = get_ai_model(config)
+os.environ['ROBOFLOW_API_KEY'] = roboflow_api_key
+model = get_model(model_id=model_id)
 
 
 def process_videos(folder_path: str) -> None:
@@ -26,69 +32,61 @@ def process_video(video_path: str) -> None:
     if not cap.isOpened():
         raise IOError(f"Erreur: Impossible d'ouvrir la vidéo {video_path}.")
 
-    # Obtenir les propriétés de la vidéo
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    # Créer une fenêtre pour afficher la vidéo
+    window_name = f"Video"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(window_name, 640, 360)
 
-    # Créer un writer pour sauvegarder la vidéo améliorée
-    # TODO : Mettre dans une fonction utilitaire dans utils.py et ne plus l'appeler ici
-    output_path = video_path.replace('.mp4', '_enhanced.mp4')
-    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print(f"Fin de la vidéo {video_path} ou erreur de lecture.")
+            break
 
-    # Créer des fenêtres pour afficher les vidéos
-    # TODO : N'afficher que la video amelioree ou la video originale (choix a faire)
-    #  avec le traitement de l'image fait dessus en appelant process_frame (après l'appel a la fonction enhance_image)
-    window_name_original = "video originale"
-    window_name_enhanced = "video amelioree"
-    cv2.namedWindow(window_name_original, cv2.WINDOW_NORMAL)
-    cv2.namedWindow(window_name_enhanced, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(window_name_original, 640, 360)
-    cv2.resizeWindow(window_name_enhanced, 640, 360)
+        # Ameliore l'image pour une meilleure detection
+        #frame = enhance_image(frame)
 
-    frame_count = 0
-    try:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                print(f"Fin de la vidéo {video_path} ou erreur de lecture.")
-                break
+        # Traiter l'image et obtenir les résultats
+        detections = process_frame(frame)
 
-            enhanced_frame = enhance_image(frame)
-            out.write(enhanced_frame)
+        # Afficher les résultats dans la vidéo
+        for index, row in detections.iterrows():
+            x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
+            label = row['name']
+            confidence = row['confidence']
+            color = (0, 255, 0)  # Vert pour les objets détectés
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, f"{label} ({confidence:.2f})", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,
+                        2)
 
-            cv2.imshow(window_name_original, frame)
-            cv2.imshow(window_name_enhanced, enhanced_frame)
+        cv2.imshow(window_name, frame)
 
-            frame_count += 1
-            if frame_count % 100 == 0:
-                print(f"Traitement du frame {frame_count}")
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-    except KeyboardInterrupt:
-        print("Interruption par l'utilisateur, nettoyage en cours...")
-    finally:
-        cap.release()
-        out.release()
-        cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()
 
 
 def process_frame(frame: Any) -> pd.DataFrame:
-    # # Ameliore l'image pour une meilleure detection
-    # frame = enhance_image(frame)
-
     # Détecter les objets dans l'image
-    results = model(frame)
+    results = model.infer(frame)[0]
 
-    # Récupérer les boîtes englobantes et les confiances
-    detections = results[0].boxes.data.cpu().numpy()
+    # Convertir les prédictions en DataFrame
+    detections_list = []
+    for prediction in results.predictions:
+        x1 = prediction.x - prediction.width / 2
+        y1 = prediction.y - prediction.height / 2
+        x2 = prediction.x + prediction.width / 2
+        y2 = prediction.y + prediction.height / 2
+        confidence = prediction.confidence
+        class_id = prediction.class_id
+        class_name = prediction.class_name
+
+        detections_list.append([x1, y1, x2, y2, confidence, class_id, class_name])
 
     # Convertir les résultats en DataFrame
-    detections_df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
-
-    # Ajouter les noms des classes
-    detections_df['name'] = detections_df['class'].apply(lambda x: model.names[int(x)])
+    detections_df = pd.DataFrame(detections_list, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'])
 
     # Filtrer les objets indésirables
     # TODO: Contraignant --> trouver une solution de remplacement
