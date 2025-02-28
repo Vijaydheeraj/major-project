@@ -1,9 +1,6 @@
 import os
 import re
 from typing import Tuple, Optional
-import pandas as pd
-from typing import Any
-from src.detection.model import model
 
 def extract_camera_data(video_path: str) -> Tuple[int, Optional[str]]:
     filename = os.path.basename(video_path)

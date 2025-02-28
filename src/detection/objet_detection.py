@@ -7,7 +7,6 @@ from typing import Any
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from src.detection.model import model
 from src.detection.light.lowlight_test import enhance_image
 from src.config.config_loader import load_config, get_ai_model
 
@@ -18,7 +17,15 @@ model = get_model(model_id=model_id)
 
 
 def process_videos(folder_path: str) -> None:
-    # Parcourir tous les fichiers dans le dossier
+    """
+    Process all video files in the specified folder.
+
+    Args:
+        folder_path (str): The path to the folder containing video files.
+
+    Returns:
+        None
+    """
     for filename in os.listdir(folder_path):
         if not filename.endswith('.mp4'):
             continue
@@ -27,12 +34,23 @@ def process_videos(folder_path: str) -> None:
 
 
 def process_video(video_path: str) -> None:
-    # Ouvrir la vidéo
+    """
+    Process a single video file for object detection.
+    Opens a window and displays the result.
+
+    Args:
+        video_path (str): The path to the video file.
+
+    Raises:
+        IOError: If the video file cannot be opened.
+
+    Returns:
+        None
+    """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise IOError(f"Erreur: Impossible d'ouvrir la vidéo {video_path}.")
 
-    # Créer une fenêtre pour afficher la vidéo
     window_name = f"Video"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(window_name, 640, 360)
@@ -43,13 +61,13 @@ def process_video(video_path: str) -> None:
             print(f"Fin de la vidéo {video_path} ou erreur de lecture.")
             break
 
-        # Ameliore l'image pour une meilleure detection
+        # Image enhancement for better detection
         #frame = enhance_image(frame)
 
-        # Traiter l'image et obtenir les résultats
+        # Image processing and results
         detections = process_frame(frame)
 
-        # Afficher les résultats dans la vidéo
+        # Show results in video
         for index, row in detections.iterrows():
             x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
             label = row['name']
@@ -69,10 +87,18 @@ def process_video(video_path: str) -> None:
 
 
 def process_frame(frame: Any) -> pd.DataFrame:
-    # Détecter les objets dans l'image
+    """
+    Process a single frame for object detection.
+
+    Args:
+        frame (Any): The frame to process.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the detection results.
+    """
     results = model.infer(frame)[0]
 
-    # Convertir les prédictions en DataFrame
+    # Convert predictions into DataFrame
     detections_list = []
     for prediction in results.predictions:
         x1 = prediction.x - prediction.width / 2
@@ -85,11 +111,6 @@ def process_frame(frame: Any) -> pd.DataFrame:
 
         detections_list.append([x1, y1, x2, y2, confidence, class_id, class_name])
 
-    # Convertir les résultats en DataFrame
     detections_df = pd.DataFrame(detections_list, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'])
-
-    # Filtrer les objets indésirables
-    # TODO: Contraignant --> trouver une solution de remplacement
-    detections_df = detections_df[~detections_df['name'].isin(["couch", "chair", "car", "bench", "train"])]
 
     return detections_df
