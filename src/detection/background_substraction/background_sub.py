@@ -2,29 +2,12 @@ import os
 import sys
 import cv2
 import numpy as np
-from typing import List, Tuple
-from src.config.config_loader import load_config, get_video_path
-from src.detection.light.lowlight_test import enhance_image
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
-
-def draw_parallelogram(image: np.ndarray, pts: List[Tuple[int, int]], color: Tuple[int, int, int], thickness: int) -> None:
-    """
-    Draw a parallelogram on the given image.
-
-    Args:
-        image (np.ndarray): The image on which to draw the parallelogram.
-        pts (List[Tuple[int, int]]): The points defining the parallelogram.
-        color (Tuple[int, int, int]): The color of the parallelogram.
-        thickness (int): The thickness of the parallelogram lines.
-
-    Returns:
-        None
-    """
-    pts = np.array(pts, np.int32)
-    pts = pts.reshape((-1, 1, 2))
-    cv2.polylines(image, [pts], isClosed=True, color=color, thickness=thickness)
+from src.config.config_loader import load_config, get_video_path
+from src.detection.light.lowlight_test import enhance_image
+from src.detection.utils.utils import draw_parallelogram
 
 
 def background_substraction(video_ref_dir: str, video_ref_name: str, video_test_dir: str, video_test_name: str, frame_tested: int) -> None:

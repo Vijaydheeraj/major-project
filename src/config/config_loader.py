@@ -35,7 +35,7 @@ def get_video_path(config: Dict[str, Any]) -> str:
     return config_video.get('path', '')
 
 
-def get_ai_model(config: Dict[str, Any]) -> tuple[str, str]:
+def get_ai_model_detection(config: Dict[str, Any]) -> tuple[str, str]:
     """
     Retrieve the AI model information from the configuration.
 
@@ -45,5 +45,19 @@ def get_ai_model(config: Dict[str, Any]) -> tuple[str, str]:
     Returns:
         tuple[str, str]: A tuple containing the Roboflow API key and the model ID.
     """
-    config_ai = config.get('ai', {})
+    config_ai = config.get('ai-detection', {})
+    return config_ai.get('roboflow_api_key', ''), config_ai.get('model_id', '')
+
+
+def get_ai_model_empty(config: Dict[str, Any]) -> tuple[str, str]:
+    """
+    Retrieve the AI model information from the configuration.
+
+    Args:
+        config (Dict[str, Any]): The configuration dictionary.
+
+    Returns:
+        tuple[str, str]: A tuple containing the Roboflow API key and the model ID.
+    """
+    config_ai = config.get('ai-empty', {})
     return config_ai.get('roboflow_api_key', ''), config_ai.get('model_id', '')
