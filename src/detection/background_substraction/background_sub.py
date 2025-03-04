@@ -9,14 +9,28 @@ from src.config.config_loader import load_config, get_video_path
 from src.detection.light.lowlight_test import enhance_image
 
 
-# Fonction pour dessiner les zones d'occlusion
+"""
+Description: Draws a parallelogram on the given image.
+Inputs:
+    - image: The image on which to draw the parallelogram (numpy array).
+    - pts: The points defining the parallelogram (list of tuples).
+    - color: The color of the parallelogram (tuple of BGR values).
+    - thickness: The thickness of the parallelogram lines (int).
+Outputs: None
+"""
 def draw_parallelogram(image, pts, color, thickness):
     pts = np.array(pts, np.int32)
     pts = pts.reshape((-1, 1, 2))
     cv2.polylines(image, [pts], isClosed=True, color=color, thickness=thickness)
 
 
-# Fonction pour définir les coordonnées des zones d'occlusion
+"""
+Description: Defines the coordinates of the occlusion zones for a given camera.
+Inputs:
+    - camera: The camera number (4,5,7 or 8).
+Outputs:
+    - coord: A list of lists, where each inner list contains four tuples representing the coordinates of a parallelogram.
+"""
 def define_coordinates_parallelograms(camera):
     coord = []
     match camera:
@@ -78,12 +92,22 @@ def define_coordinates_parallelograms(camera):
     return coord
 
 
+
+"""
+Description: Performs background subtraction to detect objects in a video frame.
+Inputs:
+    - camera: The camera number (int).
+    - video_test_dir: The directory of the test video (str).
+    - video_test_name: The name of the test video (str).
+    - frame_tested: The frame number to be tested (int).
+Outputs: None
+"""
 def background_substraction(camera, video_test_dir, video_test_name, frame_tested):
-    # Charger la configuration
+    # Load configuration
     config = load_config()
     video_path = get_video_path(config)
 
-    # nom du dossier de la vidéo de référence
+    # Reference video directory name
     video_ref_dir = "prise_0"
 
     match camera:
@@ -99,7 +123,7 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
             print("Erreur : Camera non reconnue")
             exit()
 
-    # Charger la vidéo de référence (sans objet)
+    # Load the reference video (without objects)
     cap_ref = cv2.VideoCapture(os.path.join(video_path, video_ref_dir, video_ref_name))
 
     # Load the current video (with added objects)
@@ -114,9 +138,8 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
         cap_current.release()
         exit()
 
-    # Traitement luminosité
-    #frame_ref_light = enhance_image(frame_ref)
-    frame_ref_light = frame_ref
+    # Luminosity treatment
+    frame_ref_light = enhance_image(frame_ref)
     
 
     # Get the nth frame of the current video
@@ -128,16 +151,15 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
         cap_current.release()
         exit()
 
-    # Traitement luminosité
-    #frame_cur_light = enhance_image(frame_cur)
-    frame_cur_light = frame_cur
+    # Luminosity treatment
+    frame_cur_light = enhance_image(frame_cur)
 
 
-    # --- AJOUTER UN RECTANGLE BLEU POUR LES ZONES À EXCLURE ---
+    # --- ADD A BLUE RECTANGLE FOR EXCLUSION ZONES ---
 
     coord = define_coordinates_parallelograms(camera)
 
-    # Définir les points des parallélogrammes
+    # Define the points of the parallelograms
     parallelograms = []
     parallelos = []
 
@@ -148,9 +170,9 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
         parallelos.append(parallelo)
        
 
-    # --- EXCLURE LES ZONES DES VITRES ---
+    # --- EXCLUDE WINDOW ZONES ---
 
-    #  Convertir en niveaux de gris pour la soustraction
+    # Convert to grayscale for subtraction
     gray_ref = cv2.cvtColor(frame_ref_light, cv2.COLOR_BGR2GRAY)
     gray_cur = cv2.cvtColor(frame_cur_light, cv2.COLOR_BGR2GRAY)
 
@@ -160,7 +182,7 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
     # Threshold to detect significant differences (added objects)
     _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
 
-    # Supprimer les zones des vitres (mettre à zéro les pixels dans cette région)
+    # Remove window zones (set pixels in this region to zero)
     for parallelogram in parallelograms:
         cv2.fillPoly(thresh, [parallelogram], 0)
 
@@ -172,7 +194,7 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Filter out small objects
-    min_size = 25  # Adjust according to resolution (minimum size in pixels)
+    min_size = 25  # (minimum size in pixels)
     filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_size ** 2]
 
     # Draw detected objects on the current image
@@ -182,7 +204,7 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
         cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
 
-    # Dessiner un rectangle bleu sur l'image pour visualiser la zone d'exclusion
+    # Draw a blue rectangle on the image to visualize the exclusion zone
     for parallelo in parallelos:
         draw_parallelogram(output, parallelo, (255, 0, 0), 2)
 
@@ -197,6 +219,6 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
     cv2.destroyAllWindows()
 
 
-#test
+# Test
 
 background_substraction(7,"prise_13", "vlc-record-2025-01-23-15h34m49s-rtsp___10.129.52.34_live_ID-STREAM-CAM7H-VID1-.mp4", 1000)
