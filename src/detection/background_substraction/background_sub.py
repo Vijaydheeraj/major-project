@@ -1,10 +1,10 @@
 import os
 import sys
+import cv2
+import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 
-import cv2
-import numpy as np
 from src.config.config_loader import load_config, get_video_path
 from src.detection.light.lowlight_test import enhance_image
 
@@ -102,11 +102,10 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
     # Charger la vidéo de référence (sans objet)
     cap_ref = cv2.VideoCapture(os.path.join(video_path, video_ref_dir, video_ref_name))
 
-    # Charger la vidéo actuelle (avec objets ajoutés)
+    # Load the current video (with added objects)
     cap_current = cv2.VideoCapture(os.path.join(video_path, video_test_dir, video_test_name))
 
-
-    # Aller chercher la 100ᵉ frame de la vidéo de référence
+    # Get the 100th frame of the reference video
     cap_ref.set(cv2.CAP_PROP_POS_FRAMES, 100)
     ret_ref, frame_ref = cap_ref.read()
     if not ret_ref:
@@ -120,7 +119,7 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
     frame_ref_light = frame_ref
     
 
-    # Aller chercher la nᵉ frame de la vidéo avec objet
+    # Get the nth frame of the current video
     cap_current.set(cv2.CAP_PROP_POS_FRAMES, frame_tested)
     ret_cur, frame_cur = cap_current.read()
     if not ret_cur:
@@ -155,28 +154,28 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
     gray_ref = cv2.cvtColor(frame_ref_light, cv2.COLOR_BGR2GRAY)
     gray_cur = cv2.cvtColor(frame_cur_light, cv2.COLOR_BGR2GRAY)
 
-    #  Appliquer la soustraction d'image
+    # Apply image subtraction
     diff = cv2.absdiff(gray_ref, gray_cur)
 
-    #  Seuillage pour détecter les différences importantes (objets ajoutés)
+    # Threshold to detect significant differences (added objects)
     _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
 
     # Supprimer les zones des vitres (mettre à zéro les pixels dans cette région)
     for parallelogram in parallelograms:
         cv2.fillPoly(thresh, [parallelogram], 0)
 
-    #  Appliquer des opérations morphologiques pour réduire le bruit
+    # Apply morphological operations to reduce noise
     kernel = np.ones((5, 5), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
-    #  Détecter les contours des objets présents
+    # Detect contours of present objects
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    #  Filtrer les objets trop petits
-    min_size = 25  # Ajuster selon la résolution (taille minimum en pixels)
-    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_size**2]
+    # Filter out small objects
+    min_size = 25  # Adjust according to resolution (minimum size in pixels)
+    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_size ** 2]
 
-    #  Dessiner les objets détectés sur l'image actuelle
+    # Draw detected objects on the current image
     output = frame_cur.copy()
     for cnt in filtered_contours:
         x, y, w, h = cv2.boundingRect(cnt)
@@ -188,11 +187,11 @@ def background_substraction(camera, video_test_dir, video_test_name, frame_teste
         draw_parallelogram(output, parallelo, (255, 0, 0), 2)
 
 
-    #  Afficher le résultat
+    # Display the result
     cv2.imshow("Objets detectes", output)
     cv2.waitKey(0)
 
-    #  Libérer les ressources
+    # Release resources
     cap_ref.release()
     cap_current.release()
     cv2.destroyAllWindows()
