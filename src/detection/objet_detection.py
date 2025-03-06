@@ -8,9 +8,10 @@ from pandas import DataFrame
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
+from src.detection.ai.detection import detection_yolov11
+from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
+from src.detection.ai.classification_finetuning import classification_fine_tuning
 from src.detection.light.lowlight_test import enhance_image
-from src.detection.ai.detection import detection_yolov11_fine_tuning
-from src.detection.ai.empty_or_not import detection_empty
 from src.detection.utils.utils import draw_rectangle, draw_text
 
 
@@ -108,8 +109,9 @@ def process_frame(frame: Any) -> tuple[DataFrame, list]:
         pd.DataFrame: A DataFrame containing the detection results.
         list: A list containing the empty detection results.
     """
-    detections_df = detection_yolov11_fine_tuning(frame)
-    detections_empty = detection_empty(frame)
+    detections_df = detection_yolov11(frame)
+    detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
+    classification_df_finetuning = classification_fine_tuning(frame)
 
-    return detections_df, detections_empty
+    return detections_df_fine_tuning, classification_df_finetuning
 

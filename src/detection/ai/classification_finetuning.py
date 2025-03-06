@@ -13,7 +13,7 @@ if not os.environ.get('ROBOFLOW_API_KEY'):
     os.environ['ROBOFLOW_API_KEY'] = roboflow_api_key
 model_empty = get_model(model_id=model_id)
 
-def detection_empty(frame: Any) -> list:
+def classification_fine_tuning(frame: Any) -> list:
     """
     Perform empty detection on a single frame.
 
