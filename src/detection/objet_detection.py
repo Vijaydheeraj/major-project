@@ -11,7 +11,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.detection.ai.detection import detection_yolov11
 from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
-from src.detection.light.lowlight_test import enhance_image
 from src.detection.utils.utils import draw_rectangle, draw_text
 
 
@@ -67,9 +66,6 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         frame_count += 1
         if frame_count % (nb_of_img_skip_between_2 + 1) != 0:
             continue
-
-        # Image enhancement for better detection
-        #frame = enhance_image(frame)
 
         # Image processing and results
         detections_df, detection_em = process_frame(frame)

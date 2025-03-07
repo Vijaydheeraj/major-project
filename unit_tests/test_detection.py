@@ -10,12 +10,23 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 # Functions to unit_tests
 from src.detection.objet_detection import process_frame, process_video, process_videos
 
+
 @patch('src.detection.objet_detection.detection_yolov11')
 @patch('src.detection.objet_detection.detection_yolov11_fine_tuning')
 @patch('src.detection.objet_detection.classification_fine_tuning')
 class TestDetection(unittest.TestCase):
     def test_process_frame(self, mock_classification, mock_fine_tuning, mock_detection):
+        """
+        Test the process_frame function.
 
+        This test verifies that the process_frame function correctly processes a frame
+        and returns the expected detection and classification results.
+
+        Args:
+            mock_classification (MagicMock): Mock for the classification function.
+            mock_fine_tuning (MagicMock): Mock for the fine-tuning detection function.
+            mock_detection (MagicMock): Mock for the detection function.
+        """
         # Create a mock frame as a NumPy array
         mock_frame = np.zeros((480, 640, 3), dtype=np.uint8)
 
@@ -34,6 +45,7 @@ class TestDetection(unittest.TestCase):
         self.assertEqual(len(classification_df_finetuning), 1)
         self.assertEqual(classification_df_finetuning[0].class_name, 'empty')
 
+
 @patch('cv2.VideoCapture')
 @patch('cv2.namedWindow')
 @patch('cv2.resizeWindow')
@@ -45,7 +57,23 @@ class TestDetection(unittest.TestCase):
 @patch('src.detection.objet_detection.classification_fine_tuning')
 class TestVideoProcessing(unittest.TestCase):
     def test_process_video(self, mock_classification, mock_fine_tuning, mock_detection, mock_destroy, mock_wait, mock_imshow, mock_resize, mock_named, mock_capture):
+        """
+        Test the process_video function.
 
+        This test verifies that the process_video function correctly processes a video
+        and calls the expected detection and classification functions.
+
+        Args:
+            mock_classification (MagicMock): Mock for the classification function.
+            mock_fine_tuning (MagicMock): Mock for the fine-tuning detection function.
+            mock_detection (MagicMock): Mock for the detection function.
+            mock_destroy (MagicMock): Mock for the cv2.destroyAllWindows function.
+            mock_wait (MagicMock): Mock for the cv2.waitKey function.
+            mock_imshow (MagicMock): Mock for the cv2.imshow function.
+            mock_resize (MagicMock): Mock for the cv2.resizeWindow function.
+            mock_named (MagicMock): Mock for the cv2.namedWindow function.
+            mock_capture (MagicMock): Mock for the cv2.VideoCapture function.
+        """
         mock_cap = MagicMock()
         mock_cap.isOpened.return_value = True
         mock_frame = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -65,11 +93,21 @@ class TestVideoProcessing(unittest.TestCase):
         mock_classification.assert_called()
         mock_destroy.assert_called_once()
 
+
 @patch('os.listdir')
 @patch('src.detection.objet_detection.process_video')
 class TestVideosProcessing(unittest.TestCase):
     def test_process_videos(self, mock_process_video, mock_listdir):
+        """
+        Test the process_videos function.
 
+        This test verifies that the process_videos function correctly processes all videos
+        in a specified directory and calls the process_video function for each video.
+
+        Args:
+            mock_process_video (MagicMock): Mock for the process_video function.
+            mock_listdir (MagicMock): Mock for the os.listdir function.
+        """
         mock_listdir.return_value = ['video1.mp4', 'video2.mp4']  # Simulate a folder with 2 video files
 
         process_videos('fake_folder', nb_of_img_skip_between_2=0)
