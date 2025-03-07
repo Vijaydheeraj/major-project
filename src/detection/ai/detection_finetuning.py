@@ -20,10 +20,9 @@ def detection_yolov11_fine_tuning(frame: Any) -> pd.DataFrame:
 
     Args:
         frame (Any): The frame to perform object detection on.
-        model (Any): The YOLOv1.1 model to use for detection.
 
     Returns:
-        Any: The frame with the detected objects drawn on it.
+        pd.DataFrame: The DataFrame containing the detected objects.
     """
     results = model_detection.infer(frame)[0]
 
