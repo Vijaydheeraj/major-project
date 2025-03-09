@@ -12,6 +12,7 @@ from src.detection.ai.detection import detection_yolov11
 from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
 from src.detection.utils.utils import draw_rectangle, draw_text
+from src.detection.light_fast.light_fast import enhance_brightness
 
 
 def process_videos(folder_path: str, nb_of_img_skip_between_2: int=0) -> None:
@@ -66,6 +67,8 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         frame_count += 1
         if frame_count % (nb_of_img_skip_between_2 + 1) != 0:
             continue
+        # Enhance brightness
+        frame = enhance_brightness(frame)
 
         # Image processing and results
         detections_df, detection_em = process_frame(frame)
