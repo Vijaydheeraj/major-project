@@ -5,6 +5,22 @@ from torchvision.models.vgg import vgg16
 
 
 class L_color(nn.Module):
+    """
+    Computes the color loss by measuring the difference in RGB channel means.
+
+    This loss function calculates the difference in the mean values of the RGB channels of an image.
+    The color loss is defined as the Euclidean distance between these means.
+
+    Args:
+        None
+
+    Forward Args:
+        x (torch.Tensor): The input tensor of shape (B, C, H, W) representing the image.
+            B is the batch size, C is the number of channels (RGB = 3), H and W are the height and width.
+
+    Returns:
+        torch.Tensor: A scalar tensor representing the computed color loss.
+    """
     def __init__(self):
         super(L_color, self).__init__()
 
@@ -20,6 +36,22 @@ class L_color(nn.Module):
 
 
 class L_spa(nn.Module):
+    """
+    Computes the spatial consistency loss to maintain image structure.
+
+    This loss function ensures that the spatial features (structure) of the image are preserved
+    by applying spatial convolution kernels to both the original and enhanced images.
+
+    Args:
+        None
+
+    Forward Args:
+        org (torch.Tensor): The original image tensor of shape (B, C, H, W).
+        enhance (torch.Tensor): The enhanced image tensor of shape (B, C, H, W).
+
+    Returns:
+        torch.Tensor: A tensor representing the spatial consistency loss.
+    """
 
     def __init__(self):
         super(L_spa, self).__init__()
@@ -63,6 +95,22 @@ class L_spa(nn.Module):
 
 
 class L_exp(nn.Module):
+    """
+    Exposure control loss to maintain image brightness at a desired level.
+
+    This loss function calculates the deviation of the image's mean brightness from a target value.
+    It controls the exposure of the image to ensure it matches the desired brightness.
+
+    Args:
+        patch_size (int): Size of the pooling region used to compute the average brightness.
+        mean_val (float): The target mean brightness value.
+
+    Forward Args:
+        x (torch.Tensor): The input tensor representing the image with shape (B, C, H, W).
+
+    Returns:
+        torch.Tensor: A scalar tensor representing the exposure control loss.
+    """
 
     def __init__(self, patch_size, mean_val):
         super(L_exp, self).__init__()
@@ -79,6 +127,21 @@ class L_exp(nn.Module):
 
 
 class L_TV(nn.Module):
+    """
+    Total variation loss to smooth the enhanced image.
+
+    This loss function encourages smoothness in the enhanced image by penalizing large gradients
+    along both the horizontal and vertical directions.
+
+    Args:
+        TVLoss_weight (float): The weight for the total variation loss.
+
+    Forward Args:
+        x (torch.Tensor): The input tensor representing the image with shape (B, C, H, W).
+
+    Returns:
+        torch.Tensor: A scalar tensor representing the total variation loss.
+    """
     def __init__(self, TVLoss_weight=1):
         super(L_TV, self).__init__()
         self.TVLoss_weight = TVLoss_weight
@@ -95,6 +158,20 @@ class L_TV(nn.Module):
 
 
 class Sa_Loss(nn.Module):
+    """
+    Computes the loss based on the spatial arrangement of the RGB channels.
+
+    This loss function calculates the spatial distance between the RGB channels in the image.
+
+    Args:
+        None
+
+    Forward Args:
+        x (torch.Tensor): The input tensor representing the image with shape (B, C, H, W).
+
+    Returns:
+        torch.Tensor: A scalar tensor representing the spatial arrangement loss.
+    """
     def __init__(self):
         super(Sa_Loss, self).__init__()
         # print(1)
@@ -113,6 +190,21 @@ class Sa_Loss(nn.Module):
 
 
 class perception_loss(nn.Module):
+    """
+    Computes perceptual loss using VGG16 to capture high-level image features.
+
+    This loss function uses a pretrained VGG16 model to extract high-level features and compare them 
+    between the original and enhanced images, encouraging perceptual similarity.
+
+    Args:
+        None
+
+    Forward Args:
+        x (torch.Tensor): The input tensor representing the image with shape (B, C, H, W).
+
+    Returns:
+        torch.Tensor: The feature map at the last layer used for perceptual loss.
+    """
     def __init__(self):
         super(perception_loss, self).__init__()
         features = vgg16(pretrained=True).features

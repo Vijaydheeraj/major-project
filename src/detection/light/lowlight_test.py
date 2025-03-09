@@ -24,6 +24,18 @@ DCE_net.eval()
 
 
 def enhance_image(frame):
+    """
+    Enhances a low-light frame using the trained model.
+    
+    Args:
+        frame (np.ndarray): Input frame in BGR format (OpenCV image format).
+    
+    Returns:
+        np.ndarray: Enhanced frame in BGR format.
+    
+    Raises:
+        TypeError: If the provided frame is not a NumPy array.
+    """
     if not isinstance(frame, np.ndarray):
         raise TypeError("Le frame fourni n'est pas un tableau NumPy. Vérifiez la source de l'image.")
 
@@ -50,6 +62,12 @@ def enhance_image(frame):
 
 
 def lowlight(image_path):
+    """
+    Enhances a low-light image and saves the result.
+    
+    Args:
+        image_path (str): Path to the input image.
+    """
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     data_lowlight = Image.open(image_path).convert('RGB')
 
