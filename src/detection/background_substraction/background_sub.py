@@ -294,10 +294,3 @@ def background_substraction(camera, frame_tested):
 
     # Release resources
     cv2.destroyAllWindows()
-
-
-# Test
-
-frame_test = cv2.imread("images/frame_ref_cam4.jpg")
-
-background_substraction(7, frame_test)

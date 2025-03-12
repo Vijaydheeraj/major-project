@@ -95,12 +95,13 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
     cv2.destroyAllWindows()
 
 
-def process_frame(camera_number: int, frame: Any) -> tuple[DataFrame, list]:
+def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, list]:
     """
     Process a single frame for object detection.
 
     Args:
         frame (Any): The frame to process.
+        camera_number (int): The index of the camera.
 
     Returns:
         pd.DataFrame: A DataFrame containing the detection results.
@@ -109,7 +110,7 @@ def process_frame(camera_number: int, frame: Any) -> tuple[DataFrame, list]:
     detections_df = detection_yolov11(frame)
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
     classification_df_finetuning = classification_fine_tuning(frame)
-    background_substraction(camera_number, frame)
+    #background_substraction(camera_number, frame)
 
     return detections_df_fine_tuning, classification_df_finetuning
 
