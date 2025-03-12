@@ -11,6 +11,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.detection.ai.detection import detection_yolov11
 from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
+from src.detection.utils.utils import draw_rectangle, draw_text, extract_camera_data
+from src.detection.background_substraction.background_sub import background_substraction
 from src.detection.utils.utils import draw_rectangle, draw_text
 from src.detection.light_fast.light_fast import enhance_brightness
 
@@ -71,7 +73,8 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         frame = enhance_brightness(frame)
 
         # Image processing and results
-        detections_df, detection_em = process_frame(frame)
+        camera_number, time_str = extract_camera_data(video_path)
+        detections_df, detection_em = process_frame(frame, camera_number)
 
         # Show results in video
         for index, row in detections_df.iterrows():
@@ -97,12 +100,13 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
     cv2.destroyAllWindows()
 
 
-def process_frame(frame: Any) -> tuple[DataFrame, list]:
+def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, list]:
     """
     Process a single frame for object detection.
 
     Args:
         frame (Any): The frame to process.
+        camera_number (int): The index of the camera.
 
     Returns:
         pd.DataFrame: A DataFrame containing the detection results.
@@ -111,6 +115,7 @@ def process_frame(frame: Any) -> tuple[DataFrame, list]:
     detections_df = detection_yolov11(frame)
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
     classification_df_finetuning = classification_fine_tuning(frame)
+    #background_substraction(camera_number, frame)
 
     return detections_df_fine_tuning, classification_df_finetuning
 
