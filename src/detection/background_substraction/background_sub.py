@@ -3,19 +3,23 @@ import sys
 import cv2
 import numpy as np
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from src.config.config_loader import load_config, get_video_path
 from src.detection.light.lowlight_test import enhance_image
 
+project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 
-# Load reference frames
-frame_ref_cam4 = cv2.imread("images/frame_ref_cam4_light.jpg")
-frame_ref_cam5 = cv2.imread("images/frame_ref_cam5_light.jpg")
-frame_ref_cam7 = cv2.imread("images/frame_ref_cam7_light.jpg")
-frame_ref_cam8 = cv2.imread("images/frame_ref_cam8_light.jpg")
+# Construct the absolute paths for the images
+frame_ref_cam4_path = os.path.join(project_dir, "images/frame_ref_cam4_light.jpg")
+frame_ref_cam5_path = os.path.join(project_dir, "images/frame_ref_cam5_light.jpg")
+frame_ref_cam7_path = os.path.join(project_dir, "images/frame_ref_cam7_light.jpg")
+frame_ref_cam8_path = os.path.join(project_dir, "images/frame_ref_cam8_light.jpg")
 
+# Load reference frames using the absolute paths
+frame_ref_cam4 = cv2.imread(frame_ref_cam4_path)
+frame_ref_cam5 = cv2.imread(frame_ref_cam5_path)
+frame_ref_cam7 = cv2.imread(frame_ref_cam7_path)
+frame_ref_cam8 = cv2.imread(frame_ref_cam8_path)
 
 
 """
@@ -294,6 +298,6 @@ def background_substraction(camera, frame_tested):
 
 # Test
 
-frame_test = cv2.imread("images/frame_test3600.jpg")
+frame_test = cv2.imread("images/frame_ref_cam4.jpg")
 
 background_substraction(7, frame_test)
