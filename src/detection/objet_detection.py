@@ -14,7 +14,6 @@ from src.detection.ai.classification_finetuning import classification_fine_tunin
 from src.detection.utils.utils import draw_rectangle, draw_text, extract_camera_data
 from src.detection.background_substraction.background_sub import background_substraction
 from src.detection.utils.utils import draw_rectangle, draw_text
-from src.detection.light_fast.light_fast import enhance_brightness
 
 
 def process_videos(folder_path: str, nb_of_img_skip_between_2: int=0) -> None:
@@ -69,8 +68,6 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         frame_count += 1
         if frame_count % (nb_of_img_skip_between_2 + 1) != 0:
             continue
-        # Enhance brightness
-        frame = enhance_brightness(frame)
 
         # Image processing and results
         camera_number, time_str = extract_camera_data(video_path)
@@ -115,7 +112,7 @@ def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, list]:
     detections_df = detection_yolov11(frame)
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
     classification_df_finetuning = classification_fine_tuning(frame)
-    #background_substraction(camera_number, frame)
+    background_substraction(camera_number, frame)
 
     return detections_df_fine_tuning, classification_df_finetuning
 

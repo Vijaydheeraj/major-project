@@ -5,7 +5,7 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from src.detection.light.lowlight_test import enhance_image
+from src.detection.light.equalization.light_fast import enhance_brightness
 
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 
@@ -144,7 +144,7 @@ def background_substraction_on_edges(camera, frame_tested):
     frame_ref = match_frame_reference(camera)
         
     # Luminosity treatment
-    frame_cur_light = enhance_image(frame_tested)
+    frame_cur_light = enhance_brightness(frame_tested)
 
     # --- ADD A BLUE RECTANGLE FOR EXCLUSION ZONES ---
 
@@ -232,7 +232,7 @@ def background_substraction(camera, frame_tested):
     
      
     # Luminosity treatment
-    frame_cur_light = enhance_image(frame_tested)
+    frame_cur_light = enhance_brightness(frame_tested)
 
 
     # --- ADD A BLUE RECTANGLE FOR EXCLUSION ZONES ---

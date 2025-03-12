@@ -10,10 +10,9 @@ import torch.optim
 import model
 import numpy as np
 from PIL import Image
-import glob
 import time
 import cv2
-from src.detection.light import model as light_model
+from src.detection.light.ai import model as light_model
 
 # Initialize the low-light enhancement model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -61,7 +60,7 @@ def enhance_image(frame):
     return enhanced_frame
 
 
-def lowlight(image_path):
+def enhance_image_and_save(image_path):
     """
     Enhances a low-light image and saves the result.
     
@@ -97,18 +96,3 @@ def lowlight(image_path):
     os.makedirs(os.path.dirname(result_path), exist_ok=True)
     #enregistre les images qui sont améliorées
     torchvision.utils.save_image(enhanced_image, result_path)
-
-
-if __name__ == '__main__':
-    # test_images
-    with torch.no_grad():
-        filePath = 'data/test_data/'
-
-        file_list = os.listdir(filePath)
-
-        for file_name in file_list:
-            test_list = glob.glob(filePath + file_name + "/*")
-            for image in test_list:
-                # image = image
-                print(image)
-                lowlight(image)
