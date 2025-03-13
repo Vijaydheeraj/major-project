@@ -2,6 +2,8 @@ import os
 import sys
 import cv2
 import numpy as np
+import pandas as pd
+from typing import List, Tuple, Any
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
@@ -29,7 +31,7 @@ Inputs:
 Outputs:
     - frame_ref: The reference frame corresponding to the camera number (numpy array).
 """
-def match_frame_reference(camera):
+def match_frame_reference(camera: int) -> np.ndarray:
     match camera:
         case 4:
             frame_ref = frame_ref_cam4
@@ -46,28 +48,13 @@ def match_frame_reference(camera):
 
 
 """
-Description: Draws a parallelogram on the given image.
-Inputs:
-    - image: The image on which to draw the parallelogram (numpy array).
-    - pts: The points defining the parallelogram (list of tuples).
-    - color: The color of the parallelogram (tuple of BGR values).
-    - thickness: The thickness of the parallelogram lines (int).
-Outputs: None
-"""
-def draw_parallelogram(image, pts, color, thickness):
-    pts = np.array(pts, np.int32)
-    pts = pts.reshape((-1, 1, 2))
-    cv2.polylines(image, [pts], isClosed=True, color=color, thickness=thickness)
-
-
-"""
 Description: Defines the coordinates of the occlusion zones for a given camera.
 Inputs:
     - camera: The camera number (4,5,7 or 8).
 Outputs:
     - coord: A list of lists, where each inner list contains four tuples representing the coordinates of a parallelogram.
 """
-def define_coordinates_parallelograms(camera):
+def define_occlusion_parallelograms(camera: int) -> List[List[Tuple[int, int]]]:
     coord = []
     match camera:
         case 4:
@@ -131,14 +118,16 @@ def define_coordinates_parallelograms(camera):
 
 """
 Description: Performs background subtraction to detect objects in a video frame using edge detection.
-The difference between the current frame and the reference frame is displayed with
-the detected differences in green and the exclusion zones in blue.
+The function returns a DataFrame containing the detected objects with their bounding box coordinates.
 Inputs:
     - camera: The camera number (int).
     - frame_tested: The frame to be tested (numpy array).
-Outputs: None
+Outputs:
+    - detections_df: A DataFrame containing the detected objects with their bounding box coordinates.
 """
-def background_subtraction_on_edges(camera, frame_tested):
+def background_subtraction_on_edges(camera: int, frame_tested: np.ndarray) -> pd.DataFrame:
+
+    detections_list = []
 
     # Select the reference frame corresponding to the camera number 
     frame_ref = match_frame_reference(camera)
@@ -148,19 +137,15 @@ def background_subtraction_on_edges(camera, frame_tested):
 
     # --- ADD A BLUE RECTANGLE FOR EXCLUSION ZONES ---
 
-    coord = define_coordinates_parallelograms(camera)
+    coord = define_occlusion_parallelograms(camera)
 
     # Define the points of the parallelograms
     parallelograms = []
-    parallelos = []
 
     for points in coord:
         parallelogram = np.array(points, np.int32)
-        parallelo = points
         parallelograms.append(parallelogram)
-        parallelos.append(parallelo)
-       
-    
+
     # Convert to grayscale
     gray_ref = cv2.cvtColor(frame_ref, cv2.COLOR_BGR2GRAY)
     gray_cur = cv2.cvtColor(frame_cur_light, cv2.COLOR_BGR2GRAY)
@@ -170,8 +155,8 @@ def background_subtraction_on_edges(camera, frame_tested):
     gray_cur = cv2.GaussianBlur(gray_cur, (5,5), 0)
 
     # Apply Canny edge detection
-    edges_ref = cv2.Canny(gray_ref, 200, 300) # (frame, minVal, maxVal)
-    edges_cur = cv2.Canny(gray_cur, 200, 300)
+    edges_ref = cv2.Canny(gray_ref, 250, 300) # (frame, minVal, maxVal)
+    edges_cur = cv2.Canny(gray_cur, 250, 300)
 
     # Edge substraction
     diff = cv2.absdiff(edges_ref, edges_cur)
@@ -199,55 +184,43 @@ def background_subtraction_on_edges(camera, frame_tested):
     output = frame_tested.copy()
     for cnt in filtered_contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        detections_list.append([x, y, x + w, y + h, 0, None, None])
 
+    detections_df = pd.DataFrame(detections_list,
+                                     columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'])
 
-    # Draw a blue rectangle on the image to visualize the exclusion zone
-    for parallelo in parallelos:
-        draw_parallelogram(output, parallelo, (255, 0, 0), 2)
-
-
-    # Display the result
-    cv2.imshow("Objets detectes", output)
-    cv2.waitKey(0)
-
-    # Release resources
-    cv2.destroyAllWindows()
+    return detections_df
 
 
 
 """
-Description: Performs background subtraction to detect objects in a video frame. 
-The difference between the current frame and the reference frame is displayed with
-the detected differences in green and the exclusion zones in blue.
+Description: Performs background subtraction to detect objects in a video frame.
+The function returns a DataFrame containing the detected objects with their bounding box coordinates.
 Inputs:
     - camera: The camera number (int).
     - frame_tested: The frame to be tested (numpy array).
-Outputs: None
+Outputs:
+    - detections_df: A DataFrame containing the detected objects with their bounding box coordinates.
 """
-def background_subtraction(camera, frame_tested):
+def background_subtraction(camera: int, frame_tested: np.ndarray) -> pd.DataFrame:
+
+    detections_list = []
 
     # Select the reference frame corresponding to the camera number 
     frame_ref = match_frame_reference(camera)
-    
      
     # Luminosity treatment
     frame_cur_light = enhance_brightness(frame_tested)
 
-
     # --- ADD A BLUE RECTANGLE FOR EXCLUSION ZONES ---
-
-    coord = define_coordinates_parallelograms(camera)
+    coord = define_occlusion_parallelograms(camera)
 
     # Define the points of the parallelograms
     parallelograms = []
-    parallelos = []
 
     for points in coord:
         parallelogram = np.array(points, np.int32)
-        parallelo = points
         parallelograms.append(parallelogram)
-        parallelos.append(parallelo)
        
 
         # Convert to grayscale for subtraction
@@ -280,21 +253,9 @@ def background_subtraction(camera, frame_tested):
     output = frame_tested.copy()
     for cnt in filtered_contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        cv2.rectangle(output, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        detections_list.append([x, y, x + w, y + h, 0, None, None])
 
+    detections_df = pd.DataFrame(detections_list,
+                                 columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'])
 
-    # Draw a blue rectangle on the image to visualize the exclusion zone
-    for parallelo in parallelos:
-        draw_parallelogram(output, parallelo, (255, 0, 0), 2)
-
-
-    # Display the result
-    cv2.imshow("Objets detectes", output)
-    cv2.waitKey(0)
-
-    # Release resources
-    cv2.destroyAllWindows()
-
-frame_tested = cv2.imread(os.path.join(project_dir, "images/frame_test4550.jpg"))
-
-background_subtraction(7, frame_tested)
+    return detections_df
