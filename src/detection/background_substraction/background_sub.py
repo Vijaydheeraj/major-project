@@ -10,10 +10,10 @@ from src.detection.light.equalization.light_fast import enhance_brightness
 project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 
 # Construct the absolute paths for the images
-frame_ref_cam4_path = os.path.join(project_dir, "images/frame_ref_cam4_light.jpg")
-frame_ref_cam5_path = os.path.join(project_dir, "images/frame_ref_cam5_light.jpg")
-frame_ref_cam7_path = os.path.join(project_dir, "images/frame_ref_cam7_light.jpg")
-frame_ref_cam8_path = os.path.join(project_dir, "images/frame_ref_cam8_light.jpg")
+frame_ref_cam4_path = os.path.join(project_dir, "images/frame_ref_cam4_lightV2.jpg")
+frame_ref_cam5_path = os.path.join(project_dir, "images/frame_ref_cam5_lightV2.jpg")
+frame_ref_cam7_path = os.path.join(project_dir, "images/frame_ref_cam7_lightV2.jpg")
+frame_ref_cam8_path = os.path.join(project_dir, "images/frame_ref_cam8_lightV2.jpg")
 
 # Load reference frames using the absolute paths
 frame_ref_cam4 = cv2.imread(frame_ref_cam4_path)
@@ -138,7 +138,7 @@ Inputs:
     - frame_tested: The frame to be tested (numpy array).
 Outputs: None
 """
-def background_substraction_on_edges(camera, frame_tested):
+def background_subtraction_on_edges(camera, frame_tested):
 
     # Select the reference frame corresponding to the camera number 
     frame_ref = match_frame_reference(camera)
@@ -225,7 +225,7 @@ Inputs:
     - frame_tested: The frame to be tested (numpy array).
 Outputs: None
 """
-def background_substraction(camera, frame_tested):
+def background_subtraction(camera, frame_tested):
 
     # Select the reference frame corresponding to the camera number 
     frame_ref = match_frame_reference(camera)
@@ -258,7 +258,7 @@ def background_substraction(camera, frame_tested):
         diff = cv2.absdiff(gray_ref, gray_cur)
 
         # Threshold to detect significant differences
-        _, thresh = cv2.threshold(diff, 75, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(diff, 150, 255, cv2.THRESH_BINARY)
 
 
     # Remove window zones (set pixels in this region to zero)
@@ -294,3 +294,7 @@ def background_substraction(camera, frame_tested):
 
     # Release resources
     cv2.destroyAllWindows()
+
+frame_tested = cv2.imread(os.path.join(project_dir, "images/frame_test4550.jpg"))
+
+background_subtraction(7, frame_tested)
