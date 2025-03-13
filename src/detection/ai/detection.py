@@ -21,5 +21,6 @@ def detection_yolov11(frame: Any) -> pd.DataFrame:
 
     # Convertir les résultats en DataFrame
     detections_df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
+    detections_df['name'] = detections_df['class'].apply(lambda x: model_yolo.names[int(x)])
 
     return detections_df
