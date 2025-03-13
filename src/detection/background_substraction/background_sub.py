@@ -192,7 +192,6 @@ def background_subtraction_on_edges(camera: int, frame_tested: np.ndarray) -> pd
     return detections_df
 
 
-
 """
 Description: Performs background subtraction to detect objects in a video frame.
 The function returns a DataFrame containing the detected objects with their bounding box coordinates.
@@ -221,7 +220,6 @@ def background_subtraction(camera: int, frame_tested: np.ndarray) -> pd.DataFram
     for points in coord:
         parallelogram = np.array(points, np.int32)
         parallelograms.append(parallelogram)
-       
 
         # Convert to grayscale for subtraction
         gray_ref = cv2.cvtColor(frame_ref, cv2.COLOR_BGR2GRAY)
@@ -253,7 +251,7 @@ def background_subtraction(camera: int, frame_tested: np.ndarray) -> pd.DataFram
     output = frame_tested.copy()
     for cnt in filtered_contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        detections_list.append([x, y, x + w, y + h, 0, None, None])
+        detections_list.append([x, y, x + w, y + h, None, None, None])
 
     detections_df = pd.DataFrame(detections_list,
                                  columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'])

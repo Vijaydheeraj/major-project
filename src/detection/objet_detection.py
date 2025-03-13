@@ -11,8 +11,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.detection.ai.detection import detection_yolov11
 from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
-from src.detection.utils.utils import draw_rectangle, draw_text, extract_camera_data
-from src.detection.background_substraction.background_sub import background_substraction
+from src.detection.utils.utils import extract_camera_data
+from src.detection.background_substraction.background_sub import background_subtraction
 from src.detection.utils.utils import draw_rectangle, draw_text
 
 
@@ -49,24 +49,30 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
     Returns:
         None
     """
+    print(f"Début de la vidéo {video_path}")
+
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise IOError(f"Erreur: Impossible d'ouvrir la vidéo {video_path}.")
 
     window_name_1 = "Detections"
     window_name_2 = "Fine-tuning and Classification"
+    window_name_3 = "Background subtraction"
     cv2.namedWindow(window_name_1, cv2.WINDOW_NORMAL)
     cv2.namedWindow(window_name_2, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(window_name_3, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(window_name_1, 640, 360)
     cv2.resizeWindow(window_name_2, 640, 360)
+    cv2.resizeWindow(window_name_3, 640, 360)
     cv2.moveWindow(window_name_1, 0, 0)
     cv2.moveWindow(window_name_2, 650, 0)
+    cv2.moveWindow(window_name_3, 0, 390)
 
     frame_count = 0
     while True:
         ret, frame = cap.read()
         if not ret:
-            print(f"Fin de la vidéo {video_path} ou erreur de lecture.")
+            print(f"Fin de la vidéo ou erreur de lecture.")
             break
 
         # Skip some images
@@ -76,40 +82,46 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
 
         # Image processing and results
         camera_number, time_str = extract_camera_data(video_path)
-        detections_df, detections_df_finetuning, classification_df_finetuning = process_frame(frame, camera_number)
+        detections_df, detections_df_finetuning, classification_df_finetuning, detections_df_subtraction = process_frame(frame, camera_number)
 
         # Create copies of the frame for each window
         frame_detections = frame.copy()
         frame_finetuning = frame.copy()
+        frame_subtraction = frame.copy()
+
+        def draw_detections(frame: Any, detections_df: pd.DataFrame) -> None:
+            for index, row in detections_df.iterrows():
+                x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
+                color = (0, 255, 0)  # Green for detected objects
+                draw_rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                if row['name'] is not None and row['confidence'] is not None:
+                    draw_text(frame, f"{row['name']} ({row['confidence']:.2f})", (x1, y1 - 10), color, 0.5, 2)
+
+        def draw_classification(frame: Any, classification_df: list) -> None:
+            if classification_df[0].class_name == 'empty':
+                draw_text(frame,
+                          f"{classification_df[0].class_name} ({classification_df[0].confidence:.2f})",
+                          (10, 30),
+                          (0, 255, 0), 0.5, 2)
+            elif classification_df[0].class_name == 'full':
+                draw_text(frame,
+                          f"{classification_df[0].class_name} ({classification_df[0].confidence:.2f})",
+                          (10, 30),
+                          (0, 0, 255), 0.5, 2)
 
         # Show results in the first window
-        for index, row in detections_df.iterrows():
-            x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-            color = (0, 255, 0)  # Green for detected objects
-            draw_rectangle(frame_detections, (x1, y1), (x2, y2), color, 2)
-            draw_text(frame_detections, f"{row['name']} ({row['confidence']:.2f})", (x1, y1 - 10), color, 0.5, 2)
+        draw_detections(frame_detections, detections_df)
 
         # Show results in the second window
-        for index, row in detections_df_finetuning.iterrows():
-            x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-            color = (0, 255, 0)  # Green for detected objects
-            draw_rectangle(frame_finetuning, (x1, y1), (x2, y2), color, 2)
-            draw_text(frame_finetuning, f"{row['name']} ({row['confidence']:.2f})", (x1, y1 - 10), color, 0.5, 2)
+        draw_detections(frame_finetuning, detections_df_finetuning)
+        draw_classification(frame_finetuning, classification_df_finetuning)
 
-        # Show result process by empty_or_not
-        if classification_df_finetuning[0].class_name == 'empty':
-            draw_text(frame_finetuning,
-                      f"{classification_df_finetuning[0].class_name} ({classification_df_finetuning[0].confidence:.2f})",
-                      (10, 30),
-                      (0, 255, 0), 0.5, 2)
-        elif classification_df_finetuning[0].class_name == 'full':
-            draw_text(frame_finetuning,
-                      f"{classification_df_finetuning[0].class_name} ({classification_df_finetuning[0].confidence:.2f})",
-                      (10, 30),
-                      (0, 0, 255), 0.5, 2)
+        # Show results in the third window
+        draw_detections(frame_subtraction, detections_df_subtraction)
 
         cv2.imshow(window_name_1, frame_detections)
         cv2.imshow(window_name_2, frame_finetuning)
+        cv2.imshow(window_name_3, frame_subtraction)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -118,7 +130,7 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
     cv2.destroyAllWindows()
 
 
-def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame, list]:
+def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame, list, DataFrame]:
     """
     Process a single frame for object detection.
 
@@ -127,14 +139,15 @@ def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame,
         camera_number (int): The index of the camera.
 
     Returns:
-        pd.DataFrame: A DataFrame containing the detection results.
-        pd.DataFrame: A DataFrame containing the detection results after fine tuning.
+        pd.DataFrame: A DataFrame containing the detection results after use of ai (yolo).
+        pd.DataFrame: A DataFrame containing the detection results after use of ai with fine tuning.
         list: A list containing the empty detection results.
+        pd.DataFrame: A DataFrame containing the detection results after background subtraction.
     """
     detections_df = detection_yolov11(frame)
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
     classification_df_finetuning = classification_fine_tuning(frame)
-    #background_substraction(camera_number, frame)
+    detections_df_subtraction = background_subtraction(camera_number, frame)
 
-    return detections_df, detections_df_fine_tuning, classification_df_finetuning
+    return detections_df, detections_df_fine_tuning, classification_df_finetuning, detections_df_subtraction
 
