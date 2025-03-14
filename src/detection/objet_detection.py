@@ -142,7 +142,7 @@ def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame,
     # Perform object detection using YOLO
     detections_df = detection_yolov11(frame)
     detections_df = filter_occluded_objects(detections_df, camera_number)
-    detections_df = detections_df[~detections_df['name'].isin(['couch', 'surfboard', 'train', 'bench', 'chair'])]
+    detections_df = detections_df[~detections_df['name'].isin(['couch', 'surfboard', 'train', 'bench', 'chair'])] # Filter unwanted objects (bad solution)
 
     # Perform object detection using YOLOv1.1 with fine-tuning
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)

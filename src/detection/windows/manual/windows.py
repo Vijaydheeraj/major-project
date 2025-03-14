@@ -87,7 +87,7 @@ def filter_occluded_objects(df: pd.DataFrame, camera_number: int) -> pd.DataFram
 
         for occ_poly in occlusion_polygons:
             intersection = obj_polygon.intersection(occ_poly)
-            if intersection.area / obj_area >= 0.90:
+            if intersection.area / obj_area >= 0.95:
                 return True
         return False
 
