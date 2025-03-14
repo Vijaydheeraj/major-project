@@ -12,7 +12,7 @@ from src.detection.ai.detection import detection_yolov11
 from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
 from src.detection.utils.utils import extract_camera_data
-from src.detection.background_substraction.background_sub import background_subtraction
+from src.detection.background_substraction.background_sub import background_subtraction, background_subtraction_on_edges
 from src.detection.utils.utils import draw_detections, draw_classification
 
 
@@ -58,15 +58,19 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
     window_name_1 = "Detections"
     window_name_2 = "Fine-tuning and Classification"
     window_name_3 = "Background subtraction"
+    window_name_4 = "Edge detection"
     cv2.namedWindow(window_name_1, cv2.WINDOW_NORMAL)
     cv2.namedWindow(window_name_2, cv2.WINDOW_NORMAL)
     cv2.namedWindow(window_name_3, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(window_name_4, cv2.WINDOW_NORMAL)
     cv2.resizeWindow(window_name_1, 640, 360)
     cv2.resizeWindow(window_name_2, 640, 360)
     cv2.resizeWindow(window_name_3, 640, 360)
+    cv2.resizeWindow(window_name_4, 640, 360)
     cv2.moveWindow(window_name_1, 0, 0)
     cv2.moveWindow(window_name_2, 650, 0)
     cv2.moveWindow(window_name_3, 0, 390)
+    cv2.moveWindow(window_name_4, 650, 390)
 
     frame_count = 0
     while True:
@@ -82,12 +86,17 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
 
         # Image processing and results
         camera_number, time_str = extract_camera_data(video_path)
-        detections_df, detections_df_finetuning, classification_df_finetuning, detections_df_subtraction = process_frame(frame, camera_number)
+        (detections_df,
+         detections_df_finetuning,
+         classification_df_finetuning,
+         detections_df_subtraction,
+         detections_df_edgedetection) = process_frame(frame, camera_number)
 
         # Create copies of the frame for each window
         frame_detections = frame.copy()
         frame_finetuning = frame.copy()
         frame_subtraction = frame.copy()
+        frame_edgedetection = frame.copy()
 
         # Show results in the first window
         draw_detections(frame_detections, detections_df)
@@ -99,9 +108,13 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         # Show results in the third window
         draw_detections(frame_subtraction, detections_df_subtraction)
 
+        # Show results in the fourth window
+        draw_detections(frame_edgedetection, detections_df_edgedetection)
+
         cv2.imshow(window_name_1, frame_detections)
         cv2.imshow(window_name_2, frame_finetuning)
         cv2.imshow(window_name_3, frame_subtraction)
+        cv2.imshow(window_name_4, frame_edgedetection)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -110,7 +123,7 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
     cv2.destroyAllWindows()
 
 
-def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame, list, DataFrame]:
+def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame, list, DataFrame, DataFrame]:
     """
     Process a single frame for object detection.
 
@@ -123,11 +136,15 @@ def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame,
         pd.DataFrame: A DataFrame containing the detection results after use of ai with fine tuning.
         list: A list containing the empty detection results.
         pd.DataFrame: A DataFrame containing the detection results after background subtraction.
+        pd.DataFrame: A DataFrame containing the detection results after edge detection.
     """
     detections_df = detection_yolov11(frame)
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
     classification_df_finetuning = classification_fine_tuning(frame)
     detections_df_subtraction = background_subtraction(camera_number, frame)
+    detections_df_edgedetection = background_subtraction_on_edges(camera_number, frame)
 
-    return detections_df, detections_df_fine_tuning, classification_df_finetuning, detections_df_subtraction
+    return (detections_df, detections_df_fine_tuning,
+            classification_df_finetuning, detections_df_subtraction,
+            detections_df_edgedetection)
 
