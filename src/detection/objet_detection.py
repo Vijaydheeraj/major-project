@@ -13,7 +13,7 @@ from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
 from src.detection.utils.utils import extract_camera_data
 from src.detection.background_substraction.background_sub import background_subtraction
-from src.detection.utils.utils import draw_rectangle, draw_text
+from src.detection.utils.utils import draw_detections, draw_classification
 
 
 def process_videos(folder_path: str, nb_of_img_skip_between_2: int=0) -> None:
@@ -88,26 +88,6 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         frame_detections = frame.copy()
         frame_finetuning = frame.copy()
         frame_subtraction = frame.copy()
-
-        def draw_detections(frame: Any, detections_df: pd.DataFrame) -> None:
-            for index, row in detections_df.iterrows():
-                x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-                color = (0, 255, 0)  # Green for detected objects
-                draw_rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                if row['name'] is not None and row['confidence'] is not None:
-                    draw_text(frame, f"{row['name']} ({row['confidence']:.2f})", (x1, y1 - 10), color, 0.5, 2)
-
-        def draw_classification(frame: Any, classification_df: list) -> None:
-            if classification_df[0].class_name == 'empty':
-                draw_text(frame,
-                          f"{classification_df[0].class_name} ({classification_df[0].confidence:.2f})",
-                          (10, 30),
-                          (0, 255, 0), 0.5, 2)
-            elif classification_df[0].class_name == 'full':
-                draw_text(frame,
-                          f"{classification_df[0].class_name} ({classification_df[0].confidence:.2f})",
-                          (10, 30),
-                          (0, 0, 255), 0.5, 2)
 
         # Show results in the first window
         draw_detections(frame_detections, detections_df)

@@ -2,7 +2,8 @@ import os
 import re
 import cv2
 import numpy as np
-from typing import List, Tuple, Optional
+import pandas as pd
+from typing import List, Tuple, Optional, Any
 
 def extract_camera_data(video_path: str) -> Tuple[int, Optional[str]]:
     """
@@ -23,6 +24,7 @@ def extract_camera_data(video_path: str) -> Tuple[int, Optional[str]]:
 
     return camera_number, time_str
 
+
 def draw_rectangle(image: np.ndarray, top_left: Tuple[int, int], bottom_right: Tuple[int, int], color: Tuple[int, int, int], thickness: int) -> None:
     """
     Draw a rectangle on the given image.
@@ -38,6 +40,7 @@ def draw_rectangle(image: np.ndarray, top_left: Tuple[int, int], bottom_right: T
         None
     """
     cv2.rectangle(image, top_left, bottom_right, color, thickness)
+
 
 def draw_text(image: np.ndarray, text: str, position: Tuple[int, int], color: Tuple[int, int, int], font_scale: float, thickness: int) -> None:
     """
@@ -56,6 +59,7 @@ def draw_text(image: np.ndarray, text: str, position: Tuple[int, int], color: Tu
     """
     cv2.putText(image, text, position, cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
 
+
 def draw_parallelogram(image: np.ndarray, pts: List[Tuple[int, int]], color: Tuple[int, int, int], thickness: int) -> None:
     """
     Draw a parallelogram on the given image.
@@ -72,3 +76,39 @@ def draw_parallelogram(image: np.ndarray, pts: List[Tuple[int, int]], color: Tup
     pts = np.array(pts, np.int32)
     pts = pts.reshape((-1, 1, 2))
     cv2.polylines(image, [pts], isClosed=True, color=color, thickness=thickness)
+
+
+def draw_detections(frame: Any, detections_df: pd.DataFrame) -> None:
+    """
+    Draw the detections on the given frame.
+
+    Args:
+        frame (Any): The frame on which to draw the detections.
+        detections_df (pd.DataFrame): The DataFrame containing the detections.
+    """
+    for index, row in detections_df.iterrows():
+        x1, y1, x2, y2 = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
+        color = (0, 255, 0)  # Green for detected objects
+        draw_rectangle(frame, (x1, y1), (x2, y2), color, 2)
+        if row['name'] is not None and row['confidence'] is not None:
+            draw_text(frame, f"{row['name']} ({row['confidence']:.2f})", (x1, y1 - 10), color, 0.5, 2)
+
+
+def draw_classification(frame: Any, classification_df: list) -> None:
+    """
+    Draw the classification on the given frame.
+
+    Args:
+        frame (Any): The frame on which to draw the classification.
+        classification_df (list): The list containing the classification results.
+    """
+    if classification_df[0].class_name == 'empty':
+        draw_text(frame,
+                  f"{classification_df[0].class_name} ({classification_df[0].confidence:.2f})",
+                  (10, 30),
+                  (0, 255, 0), 0.5, 2)
+    elif classification_df[0].class_name == 'full':
+        draw_text(frame,
+                  f"{classification_df[0].class_name} ({classification_df[0].confidence:.2f})",
+                  (10, 30),
+                  (0, 0, 255), 0.5, 2)
