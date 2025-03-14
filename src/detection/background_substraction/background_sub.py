@@ -24,14 +24,16 @@ frame_ref_cam7 = cv2.imread(frame_ref_cam7_path)
 frame_ref_cam8 = cv2.imread(frame_ref_cam8_path)
 
 
-"""
-Description: Matches the camera number to the corresponding reference frame.
-Inputs:
-    - camera: The camera number (int).
-Outputs:
-    - frame_ref: The reference frame corresponding to the camera number (numpy array).
-"""
 def match_frame_reference(camera: int) -> np.ndarray:
+    """
+    Matches the camera number to the corresponding reference frame.
+
+    Args:
+        camera (int): The camera number.
+
+    Returns:
+        np.ndarray: The reference frame corresponding to the camera number.
+    """
     match camera:
         case 4:
             frame_ref = frame_ref_cam4
@@ -57,7 +59,17 @@ Outputs:
     - detections_df: A DataFrame containing the detected objects with their bounding box coordinates.
 """
 def background_subtraction_on_edges(camera: int, frame_tested: np.ndarray) -> pd.DataFrame:
+    """
+        Performs background subtraction to detect objects in a video frame using edge detection.
+        The function returns a DataFrame containing the detected objects with their bounding box coordinates.
 
+        Args:
+            camera (int): The camera number.
+            frame_tested (np.ndarray): The frame to be tested.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the detected objects with their bounding box coordinates.
+    """
     detections_list = []
 
     # Select the reference frame corresponding to the camera number 
@@ -123,17 +135,18 @@ def background_subtraction_on_edges(camera: int, frame_tested: np.ndarray) -> pd
     return detections_df
 
 
-"""
-Description: Performs background subtraction to detect objects in a video frame.
-The function returns a DataFrame containing the detected objects with their bounding box coordinates.
-Inputs:
-    - camera: The camera number (int).
-    - frame_tested: The frame to be tested (numpy array).
-Outputs:
-    - detections_df: A DataFrame containing the detected objects with their bounding box coordinates.
-"""
 def background_subtraction(camera: int, frame_tested: np.ndarray) -> pd.DataFrame:
+    """
+        Performs background subtraction to detect objects in a video frame.
+        The function returns a DataFrame containing the detected objects with their bounding box coordinates.
 
+        Args:
+            camera (int): The camera number.
+            frame_tested (np.ndarray): The frame to be tested.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the detected objects with their bounding box coordinates.
+    """
     detections_list = []
 
     # Select the reference frame corresponding to the camera number 
