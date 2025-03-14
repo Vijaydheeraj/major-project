@@ -236,7 +236,7 @@ def background_subtraction(camera: int, frame_tested: np.ndarray) -> pd.DataFram
         diff = cv2.absdiff(gray_ref, gray_cur)
 
         # Threshold to detect significant differences
-        _, thresh = cv2.threshold(diff, 150, 255, cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(diff, 120, 255, cv2.THRESH_BINARY)
 
 
     # Remove window zones (set pixels in this region to zero)
