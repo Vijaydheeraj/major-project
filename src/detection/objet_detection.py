@@ -11,10 +11,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.detection.ai.detection import detection_yolov11
 from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
-from src.detection.utils.utils import extract_camera_data
 from src.detection.background_substraction.background_sub import background_subtraction, background_subtraction_on_edges
-from src.detection.utils.utils import draw_detections, draw_classification
 
+from src.detection.windows.manual.windows import filter_occluded_objects
+from src.detection.utils.utils import extract_camera_data, draw_detections, draw_classification
 
 def process_videos(folder_path: str, nb_of_img_skip_between_2: int=0) -> None:
     """
@@ -138,13 +138,27 @@ def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame,
         pd.DataFrame: A DataFrame containing the detection results after background subtraction.
         pd.DataFrame: A DataFrame containing the detection results after edge detection.
     """
+
+    # Perform object detection using YOLO
     detections_df = detection_yolov11(frame)
+    detections_df = filter_occluded_objects(detections_df, camera_number)
+    detections_df = detections_df[~detections_df['name'].isin(['couch', 'surfboard', 'train', 'bench', 'chair'])]
+
+    # Perform object detection using YOLOv1.1 with fine-tuning
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
+    detections_df_fine_tuning = filter_occluded_objects(detections_df_fine_tuning, camera_number)
+
+    # Perform classification using YOLOv1.1 with fine-tuning
     classification_df_finetuning = classification_fine_tuning(frame)
+
+    # Perform background subtraction
     detections_df_subtraction = background_subtraction(camera_number, frame)
+    detections_df_subtraction = filter_occluded_objects(detections_df_subtraction, camera_number)
+
+    # Perform background subtraction using edge detection
     detections_df_edgedetection = background_subtraction_on_edges(camera_number, frame)
+    detections_df_edgedetection = filter_occluded_objects(detections_df_edgedetection, camera_number)
 
     return (detections_df, detections_df_fine_tuning,
             classification_df_finetuning, detections_df_subtraction,
             detections_df_edgedetection)
-
