@@ -61,3 +61,16 @@ def get_ai_model_empty(config: Dict[str, Any]) -> tuple[str, str]:
     """
     config_ai = config.get('ai-empty', {})
     return config_ai.get('roboflow_api_key', ''), config_ai.get('model_id', '')
+
+def get_windows_detection(config: Dict[str, Any]) -> tuple[str, str]:
+    """
+    Retrieve the AI model information from the configuration.
+
+    Args:
+        config (Dict[str, Any]): The configuration dictionary.
+
+    Returns:
+        tuple[str, str]: A tuple containing the Roboflow API key and the model ID.
+    """
+    config_ai = config.get('ai-windows', {})
+    return config_ai.get('roboflow_api_key', ''), config_ai.get('model_id', '')

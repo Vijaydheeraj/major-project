@@ -23,3 +23,34 @@ dans le projet, elle aurait uniquement été utilisée pour regrouper les foncti
   - `object_detection.py` : **regroupe l'utilisation des différentes fonctions de détection**
 - `unit_tests/` : contient les tests unitaires
 - main.py : **fichier principal du projet à exécuter**
+
+## Configuration
+
+Afin de faire fonctionner ce projet, un fichier config.json doit être présent dans le dossier `config/`.
+Nous ne fournissons pas les clés puisque nous utilisons l'API de Roboflow pour la détection d'objets qui nous limite 
+dans le nombre de requêtes par mois.
+Ce fichier doit contenir les informations suivantes :
+
+```json
+{
+  "videos": {
+        "path": "path/to/videos",
+        "extensions": ["mp4"]
+    },
+
+    "ai-detection": {
+        "roboflow_api_key": "API OF THE MODEL",
+        "model_id": "ID OF THE MODEL"
+    },
+
+    "ai-empty": {
+        "roboflow_api_key": "API OF THE MODEL",
+        "model_id": "ID OF THE MODEL"
+    },
+
+    "ai-windows": {
+        "roboflow_api_key": "API OF THE MODEL",
+        "model_id": "ID OF THE MODEL"
+    }
+}
+```

@@ -12,8 +12,7 @@ from src.detection.ai.detection import detection_yolov11
 from src.detection.ai.detection_finetuning import detection_yolov11_fine_tuning
 from src.detection.ai.classification_finetuning import classification_fine_tuning
 from src.detection.background_substraction.background_sub import background_subtraction, background_subtraction_on_edges
-
-from src.detection.windows.manual.windows import filter_occluded_objects
+from src.detection.windows.ai.windows_finetuning import detection_windows, filter_occluded_objects
 from src.detection.utils.utils import extract_camera_data, draw_detections, draw_classification
 
 def process_videos(folder_path: str, nb_of_img_skip_between_2: int=0) -> None:
@@ -117,6 +116,7 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         cv2.imshow(window_name_4, frame_edgedetection)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            print(f"Arrêt forcé de la vidéo.")
             break
 
     cap.release()
@@ -139,25 +139,32 @@ def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame,
         pd.DataFrame: A DataFrame containing the detection results after edge detection.
     """
 
+    # Perform window detection
+    windows = detection_windows(frame)
+
     # Perform object detection using YOLO
     detections_df = detection_yolov11(frame)
-    detections_df = filter_occluded_objects(detections_df, camera_number)
+    detections_df = filter_occluded_objects(detections_df, windows)
     detections_df = detections_df[~detections_df['name'].isin(['couch', 'surfboard', 'train', 'bench', 'chair'])] # Filter unwanted objects (bad solution)
 
     # Perform object detection using YOLOv1.1 with fine-tuning
     detections_df_fine_tuning = detection_yolov11_fine_tuning(frame)
-    detections_df_fine_tuning = filter_occluded_objects(detections_df_fine_tuning, camera_number)
+    detections_df_fine_tuning = filter_occluded_objects(detections_df_fine_tuning, windows)
 
     # Perform classification using YOLOv1.1 with fine-tuning
     classification_df_finetuning = classification_fine_tuning(frame)
 
     # Perform background subtraction
     detections_df_subtraction = background_subtraction(camera_number, frame)
-    detections_df_subtraction = filter_occluded_objects(detections_df_subtraction, camera_number)
 
     # Perform background subtraction using edge detection
     detections_df_edgedetection = background_subtraction_on_edges(camera_number, frame)
-    detections_df_edgedetection = filter_occluded_objects(detections_df_edgedetection, camera_number)
+
+    # Dessiner sur la frame le résultat de la détection des fenêtres
+    for polygon in windows:
+        points = [(int(point[0]), int(point[1])) for point in polygon.exterior.coords]
+        for i in range(len(points)):
+            cv2.line(frame, points[i], points[(i + 1) % len(points)], (255, 0, 0), 2)
 
     return (detections_df, detections_df_fine_tuning,
             classification_df_finetuning, detections_df_subtraction,
