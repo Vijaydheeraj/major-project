@@ -5,11 +5,11 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import numpy as np
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 # Functions to unit_tests
 from src.detection.objet_detection import process_frame, process_video, process_videos
-
+from app import app  
 
 @patch('src.detection.objet_detection.detection_yolov11')
 @patch('src.detection.objet_detection.detection_yolov11_fine_tuning')
@@ -34,7 +34,7 @@ class TestDetection(unittest.TestCase):
         mock_fine_tuning.return_value = pd.DataFrame({'xmin': [10], 'ymin': [10], 'xmax': [90], 'ymax': [90], 'name': ['object'], 'confidence': [0.95]})
         mock_classification.return_value = [MagicMock(class_name='empty', confidence=0.85)]
 
-        detections_df, classification_df_finetuning = process_frame(mock_frame)
+        detections_df, classification_df_finetuning, additional_data, another_data, final_data = process_frame(mock_frame)
 
         mock_detection.assert_called_once_with(mock_frame)
         mock_fine_tuning.assert_called_once_with(mock_frame)
@@ -55,8 +55,11 @@ class TestDetection(unittest.TestCase):
 @patch('src.detection.objet_detection.detection_yolov11')
 @patch('src.detection.objet_detection.detection_yolov11_fine_tuning')
 @patch('src.detection.objet_detection.classification_fine_tuning')
+@patch('src.detection.objet_detection.extract_camera_data')  # Moulaye, Mock pour la fonction extract_camera_data
+@patch('src.detection.objet_detection.draw_detections')       # pour la fonction draw_detections
+@patch('src.detection.objet_detection.draw_classification')   # fonction draw_classification
 class TestVideoProcessing(unittest.TestCase):
-    def test_process_video(self, mock_classification, mock_fine_tuning, mock_detection, mock_destroy, mock_wait, mock_imshow, mock_resize, mock_named, mock_capture):
+    def test_process_video(self, mock_draw_classification, mock_draw_detections, mock_extract_camera_data, mock_classification, mock_fine_tuning, mock_detection, mock_destroy, mock_wait, mock_imshow, mock_resize, mock_named, mock_capture):
         """
         Test the process_video function.
 
@@ -108,7 +111,7 @@ class TestVideosProcessing(unittest.TestCase):
             mock_process_video (MagicMock): Mock for the process_video function.
             mock_listdir (MagicMock): Mock for the os.listdir function.
         """
-        mock_listdir.return_value = ['video1.mp4', 'video2.mp4']  # Simulate a folder with 2 video files
+        mock_listdir.return_value = ['video1.mp4', 'video2.mp4']  # Simulate a folder with 2 video files(c'est juste un similation, donc t'est pas obliger d'avoir ces videos, moulaye)
 
         process_videos('fake_folder', nb_of_img_skip_between_2=0)
 
