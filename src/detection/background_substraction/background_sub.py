@@ -49,15 +49,7 @@ def match_frame_reference(camera: int) -> np.ndarray:
     return frame_ref
 
 
-"""
-Description: Performs background subtraction to detect objects in a video frame using edge detection.
-The function returns a DataFrame containing the detected objects with their bounding box coordinates.
-Inputs:
-    - camera: The camera number (int).
-    - frame_tested: The frame to be tested (numpy array).
-Outputs:
-    - detections_df: A DataFrame containing the detected objects with their bounding box coordinates.
-"""
+
 def background_subtraction_on_edges(camera: int, frame_tested: np.ndarray) -> pd.DataFrame:
     """
         Performs background subtraction to detect objects in a video frame using edge detection.
@@ -78,7 +70,7 @@ def background_subtraction_on_edges(camera: int, frame_tested: np.ndarray) -> pd
     # Luminosity treatment
     frame_cur_light = enhance_brightness(frame_tested)
 
-    # --- ADD A BLUE RECTANGLE FOR EXCLUSION ZONES ---
+    # --- DEFINE RECTANGLES FOR EXCLUSION ZONES ---
 
     coord = define_occlusion_parallelograms(camera)
 
@@ -101,7 +93,7 @@ def background_subtraction_on_edges(camera: int, frame_tested: np.ndarray) -> pd
     edges_ref = cv2.Canny(gray_ref, 250, 300) # (frame, minVal, maxVal)
     edges_cur = cv2.Canny(gray_cur, 250, 300)
 
-    # Edge substraction
+    # Edge subtraction
     diff = cv2.absdiff(edges_ref, edges_cur)
 
     # Threshold to detect significant differences
@@ -155,7 +147,7 @@ def background_subtraction(camera: int, frame_tested: np.ndarray) -> pd.DataFram
     # Luminosity treatment
     frame_cur_light = enhance_brightness(frame_tested)
 
-    # --- ADD A BLUE RECTANGLE FOR EXCLUSION ZONES ---
+    # --- DEFINE RECTANGLES FOR EXCLUSION ZONES ---
     coord = define_occlusion_parallelograms(camera)
 
     # Define the points of the parallelograms
@@ -201,3 +193,6 @@ def background_subtraction(camera: int, frame_tested: np.ndarray) -> pd.DataFram
                                  columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class', 'name'])
 
     return detections_df
+
+
+
