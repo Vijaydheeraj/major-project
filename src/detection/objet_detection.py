@@ -2,7 +2,7 @@ import os
 import sys
 import cv2
 import pandas as pd
-from typing import Any
+from typing import Any, Optional
 
 from pandas import DataFrame
 
@@ -15,38 +15,47 @@ from src.detection.background_substraction.background_sub import background_subt
 from src.detection.windows.ai.windows_finetuning import detection_windows, filter_occluded_objects
 from src.detection.utils.utils import extract_camera_data, draw_detections, draw_classification
 
-def process_videos(folder_path: str, nb_of_img_skip_between_2: int=0) -> None:
+def process_videos(folder_path: str, nb_of_img_to_check: int=1) -> None:
     """
     Process all video files in the specified folder.
 
     Args:
         folder_path (str): The path to the folder containing video files.
-        nb_of_img_skip_between_2 (int): Number of images to skip between 2 images. Defaults to 0.
+        nb_of_img_to_check (int): Number of images to check. Default : 0.
 
     Returns:
         None
     """
+    frames = []
     for filename in os.listdir(folder_path):
         if not filename.endswith('.mp4'):
             continue
         video_path = os.path.join(folder_path, filename)
-        process_video(video_path, nb_of_img_skip_between_2)
+        frame = process_video(video_path, nb_of_img_to_check)
+        if frame is not None:
+            frames.append(frame)
+
+    if frames:
+        for i, frame in enumerate(frames):
+            cv2.imshow(f"Frame {i}", cv2.resize(frame, (640, 320)))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 
-def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
+def process_video(video_path: str, nb_of_img_to_check: int) -> Optional[Any]:
     """
     Process a single video file for object detection.
     Opens a window and displays the result.
 
     Args:
         video_path (str): The path to the video file.
-        nb_of_img_skip_between_2 (int): Number of images to skip between 2 images.
+        nb_of_img_to_check (int): Number of images to check.
 
     Raises:
         IOError: If the video file cannot be opened.
 
     Returns:
-        None
+        Optional[any]: The last valid frame if the condition is met, otherwise None.
     """
     print(f"Début de la vidéo {video_path}")
 
@@ -71,6 +80,9 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
     cv2.moveWindow(window_name_3, 0, 390)
     cv2.moveWindow(window_name_4, 650, 390)
 
+    frames_with_objects = []
+    threshold = (nb_of_img_to_check // 2) + 1
+
     frame_count = 0
     while True:
         ret, frame = cap.read()
@@ -80,8 +92,8 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
 
         # Skip some images
         frame_count += 1
-        if frame_count % (nb_of_img_skip_between_2 + 1) != 0:
-            continue
+        if frame_count > nb_of_img_to_check:
+            break
 
         # Image processing and results
         camera_number, time_str = extract_camera_data(video_path)
@@ -110,6 +122,11 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
         # Show results in the fourth window
         draw_detections(frame_edgedetection, detections_df_edgedetection)
 
+        # Check if there are any objects detected
+        if not detections_df_finetuning.empty:
+            frames_with_objects.append(frame_finetuning)
+
+        # Affichage
         cv2.imshow(window_name_1, frame_detections)
         cv2.imshow(window_name_2, frame_finetuning)
         cv2.imshow(window_name_3, frame_subtraction)
@@ -121,6 +138,9 @@ def process_video(video_path: str, nb_of_img_skip_between_2: int) -> None:
 
     cap.release()
     cv2.destroyAllWindows()
+    if len(frames_with_objects) >= threshold:
+        return frames_with_objects[-1]
+    return None
 
 
 def process_frame(frame: Any, camera_number: int) -> tuple[DataFrame, DataFrame, list, DataFrame, DataFrame]:

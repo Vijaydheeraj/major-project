@@ -16,7 +16,7 @@ def main():
     config = load_config()
     video_path = get_video_path(config)
 
-    process_videos(video_path, 100)
+    process_videos(video_path, 3)
 
 if __name__ == "__main__":
     print("START.")
